@@ -1,0 +1,41 @@
+{
+  "name": "oh-my-gemini",
+  "version": "0.1.0",
+  "description": "Gemini multi-agent orchestration CLI",
+  "type": "module",
+  "bin": {
+    "ogx": "./bin/ogx.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "setup": "node dist/bin/ogx.js setup",
+    "doctor": "node dist/bin/ogx.js doctor",
+    "dev": "tsx src/bin/ogx.ts",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "gemini",
+    "cli",
+    "orchestration",
+    "tmux",
+    "multi-agent"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "nodemailer": "^6.9.15",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.16",
+    "@types/node": "^22.10.2",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

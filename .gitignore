@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.ogx/
+.DS_Store
+*.log
+coverage/

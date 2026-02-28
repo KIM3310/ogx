@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "runtime": {
+    "geminiCommand": "gemini"
+  },
+  "notifications": {
+    "discordWebhookUrl": "",
+    "discordWebhookEnv": "OGX_DISCORD_WEBHOOK_URL",
+    "slackWebhookUrl": "",
+    "slackWebhookEnv": "OGX_SLACK_WEBHOOK_URL",
+    "telegramBotToken": "",
+    "telegramBotTokenEnv": "OGX_TELEGRAM_BOT_TOKEN",
+    "telegramChatId": "",
+    "telegramChatIdEnv": "OGX_TELEGRAM_CHAT_ID",
+    "gmail": {
+      "enabled": false,
+      "from": "",
+      "to": "",
+      "user": "",
+      "appPassword": "",
+      "userEnv": "OGX_GMAIL_USER",
+      "appPasswordEnv": "OGX_GMAIL_APP_PASSWORD",
+      "subjectPrefix": "[ogx]"
+    }
+  },
+  "team": {
+    "defaultWorkers": 3
+  },
+  "safety": {
+    "allowDangerousFlags": false
+  }
+}
