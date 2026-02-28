@@ -75,3 +75,17 @@ MVP hardened for Gemini orchestration + multi-channel notifications + Vertex pro
   - `gcloud auth application-default login`, or
   - `GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json`
 - Real Slack/Telegram/Gmail credential wiring in target environment.
+
+## 2026-02-28 Pass 5 — Cloud Run deployment path added
+
+- Added Cloud Run API entrypoint:
+  - `src/bin/server.ts`
+  - routes: `/health`, `/`, `/v1/version`, `/v1/doctor`
+- Added container build definition:
+  - `Dockerfile`
+- Added GCP automation scripts:
+  - `scripts/install-gcloud-local.sh` (user-space local install)
+  - `scripts/deploy-cloud-run.sh` (Artifact Registry + Cloud Build + Cloud Run deploy)
+- Updated npm scripts:
+  - `serve`, `dev:api`, `install:gcloud`, `deploy:gcp`
+- Updated README with Cloud Run runbook.

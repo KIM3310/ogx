@@ -14,7 +14,11 @@
     "test": "vitest run",
     "setup": "node dist/bin/ogx.js setup",
     "doctor": "node dist/bin/ogx.js doctor",
+    "serve": "node dist/bin/server.js",
     "dev": "tsx src/bin/ogx.ts",
+    "dev:api": "tsx src/bin/server.ts",
+    "deploy:gcp": "bash scripts/deploy-cloud-run.sh",
+    "install:gcloud": "bash scripts/install-gcloud-local.sh",
     "clean": "rimraf dist"
   },
   "keywords": [

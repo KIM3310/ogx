@@ -53,6 +53,39 @@ npm run setup -- --scope project
 npm run doctor
 ```
 
+## Cloud Run Deployment (GCP)
+
+This repository now includes a deployable HTTP API wrapper for Cloud Run.
+
+API routes:
+- `GET /health`
+- `GET /v1/version`
+- `POST /v1/doctor` (body: `{ "scope": "project" | "user" }`)
+
+Local API run:
+
+```bash
+npm run build
+npm run serve
+```
+
+Deploy to Cloud Run:
+
+```bash
+# 1) Install local gcloud (user-space, no sudo)
+npm run install:gcloud
+
+# 2) Login + set project
+~/.local/bin/gcloud auth login
+~/.local/bin/gcloud config set project <your-project-id>
+
+# 3) Deploy
+export GCP_PROJECT_ID=<your-project-id>
+export GCP_REGION=asia-northeast3
+export SERVICE_NAME_API=oh-my-gemini-api
+npm run deploy:gcp
+```
+
 ## Utility Scripts
 
 - Local tmux fallback install (without Homebrew write access):
