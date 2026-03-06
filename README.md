@@ -59,6 +59,7 @@ This repository now includes a deployable HTTP API wrapper for Cloud Run.
 
 API routes:
 - `GET /health`
+- `GET /meta`
 - `GET /v1/version`
 - `POST /v1/doctor` (body: `{ "scope": "project" | "user" }`)
 
@@ -67,6 +68,13 @@ Local API run:
 ```bash
 npm run build
 npm run serve
+```
+
+Health surface:
+
+```bash
+curl -s http://127.0.0.1:8080/health | jq .
+curl -s http://127.0.0.1:8080/meta | jq .
 ```
 
 Deploy to Cloud Run:
@@ -150,3 +158,12 @@ export OGX_GMAIL_APP_PASSWORD='gmail-app-password'
 ## Manual Validation Checklist
 
 See [docs/manual-validation-checklist.md](docs/manual-validation-checklist.md).
+
+## Ops Envelope
+
+- `/health` now exposes:
+  - `status`
+  - `diagnostics.next_action`
+  - `links`
+  - `ops_contract`
+- `/meta` provides runtime posture, route discovery, and capabilities for automation or dashboards.

@@ -1,4 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createProgram } from "../cli/program.js";
 import { runCommand } from "../utils/process.js";
 
@@ -8,6 +10,9 @@ interface JsonObject {
 
 const MAX_BODY_BYTES = 512 * 1024;
 const APP_VERSION = "0.1.1";
+const SERVICE_NAME = "oh-my-gemini-api";
+const OPS_CONTRACT = { schema: "ops-envelope-v1", version: 1 } as const;
+const API_ROUTES = ["/health", "/meta", "/v1/doctor", "/v1/version"] as const;
 
 function readPort(): number {
   const parsed = Number.parseInt(process.env.PORT ?? "8080", 10);
@@ -27,6 +32,79 @@ function sendHtml(response: ServerResponse, statusCode: number, html: string): v
   response.statusCode = statusCode;
   response.setHeader("content-type", "text/html; charset=utf-8");
   response.end(html);
+}
+
+function readRuntimeMode(): string {
+  return process.env.K_SERVICE ? "cloud-run" : "local";
+}
+
+function buildLinks(): JsonObject {
+  return {
+    home: "/",
+    health: "/health",
+    meta: "/meta",
+    api: "/api",
+    version: "/v1/version",
+    doctor: "/v1/doctor",
+  };
+}
+
+export function normalizeScope(scope: unknown): "project" | "user" {
+  return typeof scope === "string" && scope.trim() === "user" ? "user" : "project";
+}
+
+export function createHealthPayload(port: number): JsonObject {
+  return {
+    ok: true,
+    status: "ok",
+    service: SERVICE_NAME,
+    version: APP_VERSION,
+    diagnostics: {
+      runtime_mode: readRuntimeMode(),
+      port,
+      body_limit_bytes: MAX_BODY_BYTES,
+      next_action: 'Run POST /v1/doctor with {"scope":"project"} before trusting a fresh environment.',
+    },
+    links: buildLinks(),
+    ops_contract: OPS_CONTRACT,
+  };
+}
+
+export function createMetaPayload(port: number): JsonObject {
+  return {
+    service: SERVICE_NAME,
+    status: "ok",
+    version: APP_VERSION,
+    runtime: {
+      mode: readRuntimeMode(),
+      port,
+      node: process.version,
+    },
+    capabilities: {
+      home_page: true,
+      doctor: true,
+      version: true,
+      api_index: true,
+    },
+    diagnostics: {
+      route_count: API_ROUTES.length + 1,
+      body_limit_bytes: MAX_BODY_BYTES,
+      next_action: "Use /api for route discovery and /v1/doctor for dependency validation.",
+    },
+    links: buildLinks(),
+    ops_contract: OPS_CONTRACT,
+  };
+}
+
+export function createApiIndexPayload(): JsonObject {
+  return {
+    message: "oh-my-gemini Cloud Run API",
+    service: SERVICE_NAME,
+    status: "ok",
+    routes: [...API_ROUTES],
+    links: buildLinks(),
+    ops_contract: OPS_CONTRACT,
+  };
 }
 
 function renderHomePage(): string {
@@ -123,11 +201,13 @@ function renderHomePage(): string {
         <p class="muted">This URL is running. API and health routes are available.</p>
         <div class="grid">
           <div class="box"><strong>Health</strong><br /><code>/health</code></div>
+          <div class="box"><strong>Meta</strong><br /><code>/meta</code></div>
           <div class="box"><strong>Version</strong><br /><code>/v1/version</code></div>
           <div class="box"><strong>Doctor (POST)</strong><br /><code>/v1/doctor</code></div>
         </div>
         <div class="row">
           <button id="btnHealth">Check Health</button>
+          <button id="btnMeta">Check Meta</button>
           <button id="btnVersion">Check Version</button>
           <button id="btnDoctor">Run Doctor</button>
         </div>
@@ -144,6 +224,10 @@ function renderHomePage(): string {
       }
       document.getElementById("btnHealth").addEventListener("click", async () => {
         const r = await fetch("/health");
+        show(await r.json());
+      });
+      document.getElementById("btnMeta").addEventListener("click", async () => {
+        const r = await fetch("/meta");
         show(await r.json());
       });
       document.getElementById("btnVersion").addEventListener("click", async () => {
@@ -197,7 +281,8 @@ function readJsonBody(request: IncomingMessage): Promise<JsonObject> {
   });
 }
 
-async function runDoctor(scope: string): Promise<JsonObject> {
+async function runDoctor(scope: "project" | "user"): Promise<JsonObject> {
+  const startedAt = Date.now();
   const result = await runCommand("node", ["dist/bin/ogx.js", "doctor", "--scope", scope], {
     timeoutMs: 20_000,
   });
@@ -206,75 +291,91 @@ async function runDoctor(scope: string): Promise<JsonObject> {
     ok: result.code === 0,
     stderr: result.stderr,
     stdout: result.stdout,
+    scope_used: scope,
+    duration_ms: Date.now() - startedAt,
   };
 }
 
-const server = createServer(async (request, response) => {
-  const method = request.method ?? "GET";
-  const url = request.url ?? "/";
+export function createApiServer(port = readPort()) {
+  return createServer(async (request, response) => {
+    const method = request.method ?? "GET";
+    const url = request.url ?? "/";
 
-  if (method === "GET" && url === "/health") {
-    sendJson(response, 200, {
-      ok: true,
-      service: "oh-my-gemini-api",
-      version: APP_VERSION,
-    });
-    return;
-  }
-
-  if (method === "GET" && url === "/") {
-    sendHtml(response, 200, renderHomePage());
-    return;
-  }
-
-  if (method === "GET" && url === "/api") {
-    sendJson(response, 200, {
-      message: "oh-my-gemini Cloud Run API",
-      routes: ["/health", "/v1/doctor", "/v1/version"],
-    });
-    return;
-  }
-
-  if (method === "GET" && url === "/v1/version") {
-    const program = createProgram();
-    sendJson(response, 200, {
-      name: program.name(),
-      version: program.version(),
-      description: program.description(),
-    });
-    return;
-  }
-
-  if (method === "POST" && url === "/v1/doctor") {
-    try {
-      const body = await readJsonBody(request);
-      const scopeRaw = typeof body.scope === "string" ? body.scope.trim() : "";
-      const scope = scopeRaw === "user" ? "user" : "project";
-      const doctor = await runDoctor(scope);
-      sendJson(response, 200, {
-        ok: true,
-        result: doctor,
-      });
+    if (method === "GET" && url === "/health") {
+      sendJson(response, 200, createHealthPayload(port));
       return;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      sendJson(response, 400, {
-        ok: false,
-        error: message,
+    }
+
+    if (method === "GET" && url === "/meta") {
+      sendJson(response, 200, createMetaPayload(port));
+      return;
+    }
+
+    if (method === "GET" && url === "/") {
+      sendHtml(response, 200, renderHomePage());
+      return;
+    }
+
+    if (method === "GET" && url === "/api") {
+      sendJson(response, 200, createApiIndexPayload());
+      return;
+    }
+
+    if (method === "GET" && url === "/v1/version") {
+      const program = createProgram();
+      sendJson(response, 200, {
+        name: program.name(),
+        version: program.version(),
+        description: program.description(),
       });
       return;
     }
-  }
 
-  sendJson(response, 404, {
-    ok: false,
-    error: "not found",
+    if (method === "POST" && url === "/v1/doctor") {
+      try {
+        const body = await readJsonBody(request);
+        const scope = normalizeScope(body.scope);
+        const doctor = await runDoctor(scope);
+        sendJson(response, 200, {
+          ok: true,
+          status: doctor.ok ? "ok" : "degraded",
+          result: doctor,
+          diagnostics: {
+            next_action: doctor.ok
+              ? "Doctor passed. The runtime is ready for launch or team workflows."
+              : "Inspect result.stderr and re-run /v1/doctor after fixing missing dependencies.",
+          },
+          links: buildLinks(),
+          ops_contract: OPS_CONTRACT,
+        });
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        sendJson(response, 400, {
+          ok: false,
+          error: message,
+        });
+        return;
+      }
+    }
+
+    sendJson(response, 404, {
+      ok: false,
+      error: "not found",
+    });
   });
-});
+}
 
-const port = readPort();
-server.listen(port, "0.0.0.0", () => {
-  // Keep startup output concise for Cloud Run logs.
-  // eslint-disable-next-line no-console
-  console.info(`[ogx-api] listening on 0.0.0.0:${port}`);
-});
+export function startServer(port = readPort()): void {
+  const server = createApiServer(port);
+  server.listen(port, "0.0.0.0", () => {
+    // Keep startup output concise for Cloud Run logs.
+    // eslint-disable-next-line no-console
+    console.info(`[ogx-api] listening on 0.0.0.0:${port}`);
+  });
+}
+
+const entryPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+if (entryPath === fileURLToPath(import.meta.url)) {
+  startServer();
+}
