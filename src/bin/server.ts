@@ -380,9 +380,11 @@ function renderHomePage(): string {
           <button id="btnMeta">Check Meta</button>
           <button id="btnBrief">Check Brief</button>
           <button id="btnReview">Check Review Pack</button>
+          <button id="btnCopyRoutes">Copy Review Routes</button>
           <button id="btnSchema">Check Schema</button>
           <button id="btnVersion">Check Version</button>
           <button id="btnDoctor">Run Doctor</button>
+          <button id="btnDoctorUser">Run User Doctor</button>
         </div>
         <div id="output"><pre>Ready for health, runtime brief, or doctor validation.</pre></div>
         <div class="row muted">
@@ -392,8 +394,18 @@ function renderHomePage(): string {
     </main>
     <script>
       const output = document.getElementById("output");
+      const reviewRoutes = ["/health", "/meta", "/v1/runtime-brief", "/v1/review-pack", "/v1/schema/doctor-report"];
       function show(data) {
         output.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+      }
+      async function copyReviewRoutes() {
+        const body = ["ogx review routes", ...reviewRoutes.map((route) => "- " + route)].join("\\n");
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+          show({ ok: false, message: "Clipboard is not available.", review_routes: reviewRoutes });
+          return;
+        }
+        await navigator.clipboard.writeText(body);
+        show({ ok: true, copied: "review_routes", review_routes: reviewRoutes });
       }
       document.getElementById("btnHealth").addEventListener("click", async () => {
         const r = await fetch("/health");
@@ -411,6 +423,9 @@ function renderHomePage(): string {
         const r = await fetch("/v1/review-pack");
         show(await r.json());
       });
+      document.getElementById("btnCopyRoutes").addEventListener("click", async () => {
+        await copyReviewRoutes();
+      });
       document.getElementById("btnSchema").addEventListener("click", async () => {
         const r = await fetch("/v1/schema/doctor-report");
         show(await r.json());
@@ -424,6 +439,14 @@ function renderHomePage(): string {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ scope: "project" })
+        });
+        show(await r.json());
+      });
+      document.getElementById("btnDoctorUser").addEventListener("click", async () => {
+        const r = await fetch("/v1/doctor", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ scope: "user" })
         });
         show(await r.json());
       });
