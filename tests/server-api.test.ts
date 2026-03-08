@@ -4,6 +4,7 @@ import {
   createHealthPayload,
   createMetaPayload,
   createDoctorReportSchemaPayload,
+  createReviewPackPayload,
   createRuntimeBriefPayload,
   normalizeScope,
 } from "../src/bin/server.js";
@@ -23,6 +24,7 @@ describe("server api payloads", () => {
     expect(payload.status).toBe("ok");
     expect((payload.links as Record<string, string>).meta).toBe("/meta");
     expect((payload.links as Record<string, string>).runtime_brief).toBe("/v1/runtime-brief");
+    expect((payload.links as Record<string, string>).review_pack).toBe("/v1/review-pack");
     expect((payload.ops_contract as Record<string, string>).schema).toBe("ops-envelope-v1");
     expect((payload.readiness_contract as string)).toBe("ogx-runtime-brief-v1");
     expect(((payload.report_contract as Record<string, string>).schema)).toBe("ogx-doctor-report-v1");
@@ -45,6 +47,7 @@ describe("server api payloads", () => {
     expect(payload.status).toBe("ok");
     expect((payload.routes as string[])).toContain("/meta");
     expect((payload.routes as string[])).toContain("/v1/runtime-brief");
+    expect((payload.routes as string[])).toContain("/v1/review-pack");
   });
 
   it("creates an operator runtime brief payload", () => {
@@ -54,6 +57,15 @@ describe("server api payloads", () => {
     expect(((payload.report_contract as Record<string, string>).schema)).toBe("ogx-doctor-report-v1");
     expect(((payload.runtime as Record<string, unknown>).port)).toBe(8080);
     expect((payload.review_flow as string[]).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("creates an executive review pack payload", () => {
+    const payload = createReviewPackPayload(8080);
+
+    expect((payload.readiness_contract as string)).toBe("ogx-review-pack-v1");
+    expect(((payload.proof_bundle as Record<string, unknown>).runtime_mode as string).length).toBeGreaterThan(0);
+    expect(((payload.proof_bundle as Record<string, string[]>).review_routes)).toContain("/v1/review-pack");
+    expect((payload.review_sequence as string[]).length).toBeGreaterThanOrEqual(3);
   });
 
   it("creates a doctor report schema payload", () => {

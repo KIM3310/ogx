@@ -61,6 +61,7 @@ API routes:
 - `GET /health`
 - `GET /meta`
 - `GET /v1/runtime-brief`
+- `GET /v1/review-pack`
 - `GET /v1/schema/doctor-report`
 - `GET /v1/version`
 - `POST /v1/doctor` (body: `{ "scope": "project" | "user" }`)
@@ -78,6 +79,7 @@ Health surface:
 curl -s http://127.0.0.1:8080/health | jq .
 curl -s http://127.0.0.1:8080/meta | jq .
 curl -s http://127.0.0.1:8080/v1/runtime-brief | jq .
+curl -s http://127.0.0.1:8080/v1/review-pack | jq .
 curl -s http://127.0.0.1:8080/v1/schema/doctor-report | jq .
 ```
 

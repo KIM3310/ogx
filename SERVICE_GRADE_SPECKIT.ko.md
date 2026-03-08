@@ -14,13 +14,13 @@ Last updated: 2026-03-08
 - CLI happy-path와 failure-path를 테스트/문서로 고정
 - setup, auth, transcript surface를 단순하게 유지
 - GitHub Actions 기준 build/test green 유지
-- 이번 iteration에서 Cloud Run wrapper에 runtime brief + doctor schema surface를 추가
+- 이번 iteration에서 Cloud Run wrapper에 runtime brief + review pack + doctor schema surface를 추가
 
 ## C - Criteria
 - `npm test`, `npm run build` green
 - README 첫 화면에서 사용 대상과 실행 절차가 명확함
 - 대표 transcript나 example session이 재현 가능함
-- `/health`, `/meta`, `/v1/runtime-brief`, `/v1/schema/doctor-report`만 봐도 operator posture가 보임
+- `/health`, `/meta`, `/v1/runtime-brief`, `/v1/review-pack`, `/v1/schema/doctor-report`만 봐도 operator posture가 보임
 
 ## K - Keep
 - CLI-first product shape

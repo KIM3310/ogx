@@ -13,11 +13,13 @@ const APP_VERSION = "0.1.1";
 const SERVICE_NAME = "oh-my-gemini-api";
 const OPS_CONTRACT = { schema: "ops-envelope-v1", version: 1 } as const;
 const READINESS_CONTRACT = "ogx-runtime-brief-v1";
+const REVIEW_PACK_CONTRACT = "ogx-review-pack-v1";
 const DOCTOR_REPORT_SCHEMA = "ogx-doctor-report-v1";
 const API_ROUTES = [
   "/health",
   "/meta",
   "/v1/runtime-brief",
+  "/v1/review-pack",
   "/v1/schema/doctor-report",
   "/v1/doctor",
   "/v1/version",
@@ -54,6 +56,7 @@ function buildLinks(): JsonObject {
     meta: "/meta",
     api: "/api",
     runtime_brief: "/v1/runtime-brief",
+    review_pack: "/v1/review-pack",
     doctor_schema: "/v1/schema/doctor-report",
     version: "/v1/version",
     doctor: "/v1/doctor",
@@ -88,7 +91,7 @@ export function createHealthPayload(port: number): JsonObject {
       runtime_mode: readRuntimeMode(),
       port,
       body_limit_bytes: MAX_BODY_BYTES,
-      next_action: 'Run POST /v1/doctor with {"scope":"project"} before trusting a fresh environment.',
+      next_action: 'Open /v1/review-pack and run POST /v1/doctor with {"scope":"project"} before trusting a fresh environment.',
     },
     links: buildLinks(),
     ops_contract: OPS_CONTRACT,
@@ -112,6 +115,7 @@ export function createMetaPayload(port: number): JsonObject {
       doctor: true,
       version: true,
       api_index: true,
+      review_pack: true,
     },
     diagnostics: {
       route_count: API_ROUTES.length + 1,
@@ -162,6 +166,45 @@ export function createRuntimeBriefPayload(port: number): JsonObject {
       "Notification channels may be optional for local launch but required for multi-agent operational handoff.",
     ],
     route_count: API_ROUTES.length,
+    links: buildLinks(),
+  };
+}
+
+export function createReviewPackPayload(port: number): JsonObject {
+  return {
+    service: SERVICE_NAME,
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    readiness_contract: REVIEW_PACK_CONTRACT,
+    headline:
+      "Executive review pack for ogx: doctor validation, runtime posture, and launch handoff surfaces in one API contract.",
+    proof_bundle: {
+      runtime_mode: readRuntimeMode(),
+      port,
+      gemini_command: process.env.OGX_GEMINI_CMD || "gemini",
+      review_routes: ["/health", "/meta", "/v1/runtime-brief", "/v1/review-pack", "/v1/schema/doctor-report"],
+      doctor_scope_defaults: ["project", "user"],
+    },
+    approval_gate: {
+      doctor_required_before_launch: true,
+      health_required_before_automation: true,
+      team_handoff_requires_notification_checks: true,
+    },
+    trust_boundary: [
+      "This API is a wrapper around local CLI/runtime checks and does not replace Gemini CLI or tmux availability in the target environment.",
+      "Doctor output is evidence for operator review, not a guarantee that downstream launch goals have already succeeded.",
+      "Notification and team orchestration surfaces may be optional locally but become operational gates for shared handoff.",
+    ],
+    review_sequence: [
+      "Open /health, /meta, and /v1/runtime-brief to confirm runtime mode and command posture.",
+      "Read /v1/review-pack before wiring the service into external automation or Cloud Run handoff.",
+      "Run POST /v1/doctor with the right scope and inspect stdout/stderr before launch or team commands.",
+    ],
+    watchouts: [
+      "A green HTTP wrapper does not prove the target shell has the correct Gemini authentication state.",
+      "Cloud Run availability does not eliminate local environment drift when the operator later runs CLI commands elsewhere.",
+      "Doctor evidence can go stale quickly if shell tools or notification channels change after validation.",
+    ],
     links: buildLinks(),
   };
 }
@@ -271,6 +314,7 @@ function renderHomePage(): string {
           <div class="box"><strong>Health</strong><br /><code>/health</code></div>
           <div class="box"><strong>Meta</strong><br /><code>/meta</code></div>
           <div class="box"><strong>Runtime Brief</strong><br /><code>/v1/runtime-brief</code></div>
+          <div class="box"><strong>Review Pack</strong><br /><code>/v1/review-pack</code></div>
           <div class="box"><strong>Doctor Schema</strong><br /><code>/v1/schema/doctor-report</code></div>
           <div class="box"><strong>Version</strong><br /><code>/v1/version</code></div>
           <div class="box"><strong>Doctor (POST)</strong><br /><code>/v1/doctor</code></div>
@@ -279,6 +323,7 @@ function renderHomePage(): string {
           <button id="btnHealth">Check Health</button>
           <button id="btnMeta">Check Meta</button>
           <button id="btnBrief">Check Brief</button>
+          <button id="btnReview">Check Review Pack</button>
           <button id="btnSchema">Check Schema</button>
           <button id="btnVersion">Check Version</button>
           <button id="btnDoctor">Run Doctor</button>
@@ -304,6 +349,10 @@ function renderHomePage(): string {
       });
       document.getElementById("btnBrief").addEventListener("click", async () => {
         const r = await fetch("/v1/runtime-brief");
+        show(await r.json());
+      });
+      document.getElementById("btnReview").addEventListener("click", async () => {
+        const r = await fetch("/v1/review-pack");
         show(await r.json());
       });
       document.getElementById("btnSchema").addEventListener("click", async () => {
@@ -393,6 +442,11 @@ export function createApiServer(port = readPort()) {
 
     if (method === "GET" && url === "/v1/runtime-brief") {
       sendJson(response, 200, createRuntimeBriefPayload(port));
+      return;
+    }
+
+    if (method === "GET" && url === "/v1/review-pack") {
+      sendJson(response, 200, createReviewPackPayload(port));
       return;
     }
 
