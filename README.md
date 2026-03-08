@@ -177,3 +177,18 @@ See [docs/manual-validation-checklist.md](docs/manual-validation-checklist.md).
 - `/meta` provides runtime posture, route discovery, and capabilities for automation or dashboards.
 - `/v1/runtime-brief` summarizes launch/team readiness and operator review flow.
 - `/v1/schema/doctor-report` exposes the doctor result contract for downstream automation and reviewers.
+
+## 2-Minute Review Path
+
+- Open `/health` and `/meta` to confirm runtime mode, command posture, and route discovery.
+- Open `/v1/runtime-brief` and `/v1/review-pack` before wiring automation or Cloud Run handoff.
+- Run `POST /v1/doctor` with `{"scope":"project"}` and inspect stdout/stderr before launch.
+- Rerun doctor after environment drift or notification-channel changes.
+
+## Proof Assets
+
+- `Health Envelope` -> `/health`
+- `Runtime Brief` -> `/v1/runtime-brief`
+- `Review Pack` -> `/v1/review-pack`
+- `Doctor Schema` -> `/v1/schema/doctor-report`
+- `Doctor Run` -> `/v1/doctor`

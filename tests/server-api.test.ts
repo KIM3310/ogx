@@ -57,6 +57,8 @@ describe("server api payloads", () => {
     expect(((payload.report_contract as Record<string, string>).schema)).toBe("ogx-doctor-report-v1");
     expect(((payload.runtime as Record<string, unknown>).port)).toBe(8080);
     expect((payload.review_flow as string[]).length).toBeGreaterThanOrEqual(3);
+    expect((payload.two_minute_review as string[]).length).toBe(4);
+    expect(((payload.proof_assets as Array<Record<string, string>>)[0].path)).toBe("/health");
   });
 
   it("creates an executive review pack payload", () => {
@@ -66,6 +68,8 @@ describe("server api payloads", () => {
     expect(((payload.proof_bundle as Record<string, unknown>).runtime_mode as string).length).toBeGreaterThan(0);
     expect(((payload.proof_bundle as Record<string, string[]>).review_routes)).toContain("/v1/review-pack");
     expect((payload.review_sequence as string[]).length).toBeGreaterThanOrEqual(3);
+    expect((payload.two_minute_review as string[]).length).toBe(4);
+    expect(((payload.proof_assets as Array<Record<string, string>>)[0].label)).toBe("Health Envelope");
   });
 
   it("creates a doctor report schema payload", () => {

@@ -15,6 +15,39 @@ const OPS_CONTRACT = { schema: "ops-envelope-v1", version: 1 } as const;
 const READINESS_CONTRACT = "ogx-runtime-brief-v1";
 const REVIEW_PACK_CONTRACT = "ogx-review-pack-v1";
 const DOCTOR_REPORT_SCHEMA = "ogx-doctor-report-v1";
+const OGX_TWO_MINUTE_REVIEW = [
+  "Open /health and /meta to confirm runtime mode, command posture, and route discovery.",
+  "Open /v1/runtime-brief and /v1/review-pack before wiring automation or Cloud Run handoff.",
+  'Run POST /v1/doctor with {"scope":"project"} and inspect stdout/stderr before launch.',
+  "Treat doctor evidence as a freshness check and rerun it after environment drift or notification changes.",
+] as const;
+const OGX_PROOF_ASSETS = [
+  {
+    label: "Health Envelope",
+    path: "/health",
+    why: "Shows runtime mode, body limit, next action, and report contract.",
+  },
+  {
+    label: "Runtime Brief",
+    path: "/v1/runtime-brief",
+    why: "Summarizes launch readiness, review flow, and watchouts before orchestration.",
+  },
+  {
+    label: "Review Pack",
+    path: "/v1/review-pack",
+    why: "Packages approval gate, trust boundary, and reviewer sequence in one payload.",
+  },
+  {
+    label: "Doctor Schema",
+    path: "/v1/schema/doctor-report",
+    why: "Pins the doctor report contract for launch and team automation.",
+  },
+  {
+    label: "Doctor Run",
+    path: "/v1/doctor",
+    why: "Generates request-level dependency evidence before launch or team handoff.",
+  },
+] as const;
 const API_ROUTES = [
   "/health",
   "/meta",
@@ -161,10 +194,12 @@ export function createRuntimeBriefPayload(port: number): JsonObject {
       "Use health/meta/runtime-brief to confirm service posture before wiring external automation.",
       "Treat team and launch state as separate operator steps even after doctor passes.",
     ],
+    two_minute_review: [...OGX_TWO_MINUTE_REVIEW],
     watchouts: [
       "A green API wrapper does not guarantee tmux or Gemini CLI availability inside the target environment.",
       "Notification channels may be optional for local launch but required for multi-agent operational handoff.",
     ],
+    proof_assets: [...OGX_PROOF_ASSETS],
     route_count: API_ROUTES.length,
     links: buildLinks(),
   };
@@ -200,11 +235,13 @@ export function createReviewPackPayload(port: number): JsonObject {
       "Read /v1/review-pack before wiring the service into external automation or Cloud Run handoff.",
       "Run POST /v1/doctor with the right scope and inspect stdout/stderr before launch or team commands.",
     ],
+    two_minute_review: [...OGX_TWO_MINUTE_REVIEW],
     watchouts: [
       "A green HTTP wrapper does not prove the target shell has the correct Gemini authentication state.",
       "Cloud Run availability does not eliminate local environment drift when the operator later runs CLI commands elsewhere.",
       "Doctor evidence can go stale quickly if shell tools or notification channels change after validation.",
     ],
+    proof_assets: [...OGX_PROOF_ASSETS],
     links: buildLinks(),
   };
 }
@@ -219,6 +256,10 @@ export function createDoctorReportSchemaPayload(): JsonObject {
 }
 
 function renderHomePage(): string {
+  const twoMinuteList = OGX_TWO_MINUTE_REVIEW.map((item) => `<li>${item}</li>`).join("");
+  const proofAssetList = OGX_PROOF_ASSETS.map(
+    (item) => `<li><strong>${item.label}</strong> <code>${item.path}</code><br />${item.why}</li>`,
+  ).join("");
   return `<!doctype html>
 <html lang="ko">
   <head>
@@ -283,6 +324,11 @@ function renderHomePage(): string {
         font-size: 12px;
       }
       .row { margin-top: 14px; }
+      ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      li + li { margin-top: 6px; }
       button {
         background: #1155cc;
         color: #fff;
@@ -318,6 +364,16 @@ function renderHomePage(): string {
           <div class="box"><strong>Doctor Schema</strong><br /><code>/v1/schema/doctor-report</code></div>
           <div class="box"><strong>Version</strong><br /><code>/v1/version</code></div>
           <div class="box"><strong>Doctor (POST)</strong><br /><code>/v1/doctor</code></div>
+        </div>
+        <div class="grid">
+          <div class="box">
+            <strong>2-Minute Review</strong>
+            <ul>${twoMinuteList}</ul>
+          </div>
+          <div class="box">
+            <strong>Proof Assets</strong>
+            <ul>${proofAssetList}</ul>
+          </div>
         </div>
         <div class="row">
           <button id="btnHealth">Check Health</button>
