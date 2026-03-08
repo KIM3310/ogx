@@ -60,6 +60,8 @@ This repository now includes a deployable HTTP API wrapper for Cloud Run.
 API routes:
 - `GET /health`
 - `GET /meta`
+- `GET /v1/runtime-brief`
+- `GET /v1/schema/doctor-report`
 - `GET /v1/version`
 - `POST /v1/doctor` (body: `{ "scope": "project" | "user" }`)
 
@@ -75,6 +77,8 @@ Health surface:
 ```bash
 curl -s http://127.0.0.1:8080/health | jq .
 curl -s http://127.0.0.1:8080/meta | jq .
+curl -s http://127.0.0.1:8080/v1/runtime-brief | jq .
+curl -s http://127.0.0.1:8080/v1/schema/doctor-report | jq .
 ```
 
 Deploy to Cloud Run:
@@ -164,6 +168,10 @@ See [docs/manual-validation-checklist.md](docs/manual-validation-checklist.md).
 - `/health` now exposes:
   - `status`
   - `diagnostics.next_action`
+  - `readiness_contract`
+  - `report_contract`
   - `links`
   - `ops_contract`
 - `/meta` provides runtime posture, route discovery, and capabilities for automation or dashboards.
+- `/v1/runtime-brief` summarizes launch/team readiness and operator review flow.
+- `/v1/schema/doctor-report` exposes the doctor result contract for downstream automation and reviewers.

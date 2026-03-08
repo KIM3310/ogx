@@ -12,7 +12,16 @@ const MAX_BODY_BYTES = 512 * 1024;
 const APP_VERSION = "0.1.1";
 const SERVICE_NAME = "oh-my-gemini-api";
 const OPS_CONTRACT = { schema: "ops-envelope-v1", version: 1 } as const;
-const API_ROUTES = ["/health", "/meta", "/v1/doctor", "/v1/version"] as const;
+const READINESS_CONTRACT = "ogx-runtime-brief-v1";
+const DOCTOR_REPORT_SCHEMA = "ogx-doctor-report-v1";
+const API_ROUTES = [
+  "/health",
+  "/meta",
+  "/v1/runtime-brief",
+  "/v1/schema/doctor-report",
+  "/v1/doctor",
+  "/v1/version",
+] as const;
 
 function readPort(): number {
   const parsed = Number.parseInt(process.env.PORT ?? "8080", 10);
@@ -44,8 +53,22 @@ function buildLinks(): JsonObject {
     health: "/health",
     meta: "/meta",
     api: "/api",
+    runtime_brief: "/v1/runtime-brief",
+    doctor_schema: "/v1/schema/doctor-report",
     version: "/v1/version",
     doctor: "/v1/doctor",
+  };
+}
+
+function createDoctorReportSchema(): JsonObject {
+  return {
+    schema: DOCTOR_REPORT_SCHEMA,
+    required_sections: ["scope_used", "ok", "stdout", "stderr", "duration_ms"],
+    operator_rules: [
+      "Run doctor before trusting a fresh project or user environment.",
+      "Treat missing tmux, Gemini CLI, or notification channels as launch blockers when team mode is required.",
+      "Keep doctor evidence attached to the same runtime envelope that serves launch and team commands.",
+    ],
   };
 }
 
@@ -59,6 +82,8 @@ export function createHealthPayload(port: number): JsonObject {
     status: "ok",
     service: SERVICE_NAME,
     version: APP_VERSION,
+    readiness_contract: READINESS_CONTRACT,
+    report_contract: createDoctorReportSchema(),
     diagnostics: {
       runtime_mode: readRuntimeMode(),
       port,
@@ -75,6 +100,8 @@ export function createMetaPayload(port: number): JsonObject {
     service: SERVICE_NAME,
     status: "ok",
     version: APP_VERSION,
+    readiness_contract: READINESS_CONTRACT,
+    report_contract: createDoctorReportSchema(),
     runtime: {
       mode: readRuntimeMode(),
       port,
@@ -89,7 +116,8 @@ export function createMetaPayload(port: number): JsonObject {
     diagnostics: {
       route_count: API_ROUTES.length + 1,
       body_limit_bytes: MAX_BODY_BYTES,
-      next_action: "Use /api for route discovery and /v1/doctor for dependency validation.",
+      next_action:
+        "Use /v1/runtime-brief for operator posture and /v1/doctor for dependency validation.",
     },
     links: buildLinks(),
     ops_contract: OPS_CONTRACT,
@@ -101,9 +129,49 @@ export function createApiIndexPayload(): JsonObject {
     message: "oh-my-gemini Cloud Run API",
     service: SERVICE_NAME,
     status: "ok",
+    readiness_contract: READINESS_CONTRACT,
+    report_contract: createDoctorReportSchema(),
     routes: [...API_ROUTES],
     links: buildLinks(),
     ops_contract: OPS_CONTRACT,
+  };
+}
+
+export function createRuntimeBriefPayload(port: number): JsonObject {
+  return {
+    service: SERVICE_NAME,
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    readiness_contract: READINESS_CONTRACT,
+    headline:
+      "Operator-grade Gemini orchestration CLI wrapper with explicit doctor, launch, and team readiness surfaces.",
+    report_contract: createDoctorReportSchema(),
+    runtime: {
+      mode: readRuntimeMode(),
+      port,
+      node: process.version,
+      gemini_command: process.env.OGX_GEMINI_CMD || "gemini",
+    },
+    review_flow: [
+      "Run doctor before launch or team orchestration on a fresh machine.",
+      "Use health/meta/runtime-brief to confirm service posture before wiring external automation.",
+      "Treat team and launch state as separate operator steps even after doctor passes.",
+    ],
+    watchouts: [
+      "A green API wrapper does not guarantee tmux or Gemini CLI availability inside the target environment.",
+      "Notification channels may be optional for local launch but required for multi-agent operational handoff.",
+    ],
+    route_count: API_ROUTES.length,
+    links: buildLinks(),
+  };
+}
+
+export function createDoctorReportSchemaPayload(): JsonObject {
+  return {
+    service: SERVICE_NAME,
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    ...createDoctorReportSchema(),
   };
 }
 
@@ -113,7 +181,7 @@ function renderHomePage(): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>StagePilot API</title>
+    <title>ogx API</title>
     <style>
       :root { color-scheme: light; }
       body {
@@ -197,21 +265,25 @@ function renderHomePage(): string {
     <main class="wrap">
       <section class="card">
         <span class="badge">Cloud Run Live</span>
-        <h1>Seoul Welfare Navigator (StagePilot)</h1>
-        <p class="muted">This URL is running. API and health routes are available.</p>
+        <h1>ogx Operator API</h1>
+        <p class="muted">This URL is running. Runtime brief, doctor contract, and launch readiness routes are available.</p>
         <div class="grid">
           <div class="box"><strong>Health</strong><br /><code>/health</code></div>
           <div class="box"><strong>Meta</strong><br /><code>/meta</code></div>
+          <div class="box"><strong>Runtime Brief</strong><br /><code>/v1/runtime-brief</code></div>
+          <div class="box"><strong>Doctor Schema</strong><br /><code>/v1/schema/doctor-report</code></div>
           <div class="box"><strong>Version</strong><br /><code>/v1/version</code></div>
           <div class="box"><strong>Doctor (POST)</strong><br /><code>/v1/doctor</code></div>
         </div>
         <div class="row">
           <button id="btnHealth">Check Health</button>
           <button id="btnMeta">Check Meta</button>
+          <button id="btnBrief">Check Brief</button>
+          <button id="btnSchema">Check Schema</button>
           <button id="btnVersion">Check Version</button>
           <button id="btnDoctor">Run Doctor</button>
         </div>
-        <div id="output"><pre>Ready</pre></div>
+        <div id="output"><pre>Ready for health, runtime brief, or doctor validation.</pre></div>
         <div class="row muted">
           API index JSON: <a href="/api">/api</a>
         </div>
@@ -228,6 +300,14 @@ function renderHomePage(): string {
       });
       document.getElementById("btnMeta").addEventListener("click", async () => {
         const r = await fetch("/meta");
+        show(await r.json());
+      });
+      document.getElementById("btnBrief").addEventListener("click", async () => {
+        const r = await fetch("/v1/runtime-brief");
+        show(await r.json());
+      });
+      document.getElementById("btnSchema").addEventListener("click", async () => {
+        const r = await fetch("/v1/schema/doctor-report");
         show(await r.json());
       });
       document.getElementById("btnVersion").addEventListener("click", async () => {
@@ -308,6 +388,16 @@ export function createApiServer(port = readPort()) {
 
     if (method === "GET" && url === "/meta") {
       sendJson(response, 200, createMetaPayload(port));
+      return;
+    }
+
+    if (method === "GET" && url === "/v1/runtime-brief") {
+      sendJson(response, 200, createRuntimeBriefPayload(port));
+      return;
+    }
+
+    if (method === "GET" && url === "/v1/schema/doctor-report") {
+      sendJson(response, 200, createDoctorReportSchemaPayload());
       return;
     }
 
