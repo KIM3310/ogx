@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createProgram } from "../cli/program.js";
 import { runCommand } from "../utils/process.js";
+import { authorizeOperatorRequest, readOperatorAuthStatus } from "./operator-access.js";
+import { createRuntimeStore, summarizeRuntimeStore, type OgxRuntimeStoreSummary } from "./runtime-store.js";
 
 interface JsonObject {
   [key: string]: unknown;
@@ -78,6 +80,10 @@ export interface OgxRuntimeTelemetry {
     };
   };
   routeCounts: Record<string, number>;
+}
+
+function buildRuntimePersistenceSummary(): OgxRuntimeStoreSummary {
+  return summarizeRuntimeStore();
 }
 
 function createRuntimeTelemetry(): OgxRuntimeTelemetry {
@@ -173,6 +179,8 @@ export function normalizeScope(scope: unknown): "project" | "user" {
 }
 
 export function createHealthPayload(port: number): JsonObject {
+  const operatorAuth = readOperatorAuthStatus();
+  const persistence = buildRuntimePersistenceSummary();
   return {
     ok: true,
     status: "ok",
@@ -184,6 +192,9 @@ export function createHealthPayload(port: number): JsonObject {
       runtime_mode: readRuntimeMode(),
       port,
       body_limit_bytes: MAX_BODY_BYTES,
+      operator_auth_enabled: operatorAuth.enabled,
+      runtime_store_path: persistence.path,
+      persisted_event_count: persistence.event_count,
       next_action: 'Open /v1/review-pack and run POST /v1/doctor with {"scope":"project"} before trusting a fresh environment.',
     },
     links: buildLinks(),
@@ -192,6 +203,8 @@ export function createHealthPayload(port: number): JsonObject {
 }
 
 export function createMetaPayload(port: number): JsonObject {
+  const operatorAuth = readOperatorAuthStatus();
+  const persistence = buildRuntimePersistenceSummary();
   return {
     service: SERVICE_NAME,
     status: "ok",
@@ -202,6 +215,8 @@ export function createMetaPayload(port: number): JsonObject {
       mode: readRuntimeMode(),
       port,
       node: process.version,
+      operator_auth: operatorAuth,
+      persistence,
     },
     capabilities: {
       home_page: true,
@@ -235,6 +250,8 @@ export function createApiIndexPayload(): JsonObject {
 }
 
 export function createRuntimeBriefPayload(port: number): JsonObject {
+  const operatorAuth = readOperatorAuthStatus();
+  const persistence = buildRuntimePersistenceSummary();
   return {
     service: SERVICE_NAME,
     status: "ok",
@@ -248,6 +265,8 @@ export function createRuntimeBriefPayload(port: number): JsonObject {
       port,
       node: process.version,
       gemini_command: process.env.OGX_GEMINI_CMD || "gemini",
+      operator_auth: operatorAuth,
+      persistence,
     },
     review_flow: [
       "Run doctor before launch or team orchestration on a fresh machine.",
@@ -267,8 +286,10 @@ export function createRuntimeBriefPayload(port: number): JsonObject {
 
 export function createRuntimeScorecardPayload(
   port: number,
-  telemetry: OgxRuntimeTelemetry
+  telemetry: OgxRuntimeTelemetry,
+  persisted: OgxRuntimeStoreSummary = buildRuntimePersistenceSummary()
 ): JsonObject {
+  const operatorAuth = readOperatorAuthStatus();
   const reviewRoutes = ["/health", "/meta", "/v1/runtime-brief", "/v1/runtime-scorecard", "/v1/review-pack"];
   const routeCounts = Object.entries(telemetry.routeCounts)
     .map(([path, count]) => ({ path, count }))
@@ -287,6 +308,7 @@ export function createRuntimeScorecardPayload(
       node: process.version,
       route_count: API_ROUTES.length,
       review_routes: reviewRoutes,
+      operator_auth: operatorAuth,
     },
     doctor_runs: {
       ...telemetry.doctorRuns,
@@ -302,6 +324,7 @@ export function createRuntimeScorecardPayload(
       total_requests: routeCounts.reduce((total, item) => total + item.count, 0),
       route_counts: routeCounts,
     },
+    persistence: persisted,
     recommendations: [
       telemetry.doctorRuns.total > 0
         ? "Doctor telemetry is populated. Re-run doctor after any shell, Gemini CLI, or notification drift."
@@ -316,6 +339,8 @@ export function createRuntimeScorecardPayload(
 }
 
 export function createReviewPackPayload(port: number): JsonObject {
+  const operatorAuth = readOperatorAuthStatus();
+  const persistence = buildRuntimePersistenceSummary();
   return {
     service: SERVICE_NAME,
     status: "ok",
@@ -327,6 +352,8 @@ export function createReviewPackPayload(port: number): JsonObject {
       runtime_mode: readRuntimeMode(),
       port,
       gemini_command: process.env.OGX_GEMINI_CMD || "gemini",
+      operator_auth: operatorAuth,
+      persistence,
       review_routes: [
         "/health",
         "/meta",
@@ -341,6 +368,7 @@ export function createReviewPackPayload(port: number): JsonObject {
       doctor_required_before_launch: true,
       health_required_before_automation: true,
       team_handoff_requires_notification_checks: true,
+      operator_token_required_for_doctor: operatorAuth.enabled,
     },
     trust_boundary: [
       "This API is a wrapper around local CLI/runtime checks and does not replace Gemini CLI or tmux availability in the target environment.",
@@ -660,10 +688,17 @@ async function runDoctor(scope: "project" | "user"): Promise<JsonObject> {
 
 export function createApiServer(port = readPort()) {
   const telemetry = createRuntimeTelemetry();
+  const runtimeStore = createRuntimeStore();
   return createServer(async (request, response) => {
     const method = request.method ?? "GET";
     const url = request.url ?? "/";
     recordRouteHit(telemetry, url);
+    runtimeStore.append({
+      at: new Date().toISOString(),
+      event_type: "route_hit",
+      method,
+      route: url,
+    });
 
     if (method === "GET" && url === "/health") {
       sendJson(response, 200, createHealthPayload(port));
@@ -686,7 +721,7 @@ export function createApiServer(port = readPort()) {
     }
 
     if (method === "GET" && url === "/v1/runtime-scorecard") {
-      sendJson(response, 200, createRuntimeScorecardPayload(port, telemetry));
+      sendJson(response, 200, createRuntimeScorecardPayload(port, telemetry, summarizeRuntimeStore()));
       return;
     }
 
@@ -717,10 +752,27 @@ export function createApiServer(port = readPort()) {
 
     if (method === "POST" && url === "/v1/doctor") {
       try {
+        if (!authorizeOperatorRequest(request)) {
+          sendJson(response, 401, {
+            ok: false,
+            error: "operator token required",
+            required_header: readOperatorAuthStatus().header,
+          });
+          return;
+        }
         const body = await readJsonBody(request);
         const scope = normalizeScope(body.scope);
         const doctor = await runDoctor(scope);
         recordDoctorRun(telemetry, scope, doctor.ok === true);
+        runtimeStore.append({
+          at: new Date().toISOString(),
+          event_type: "doctor_run",
+          method,
+          route: url,
+          scope,
+          ok: doctor.ok === true,
+          duration_ms: Number(doctor.duration_ms ?? 0),
+        });
         sendJson(response, 200, {
           ok: true,
           status: doctor.ok ? "ok" : "degraded",

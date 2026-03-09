@@ -91,6 +91,14 @@ describe("server api payloads", () => {
         "/v1/doctor": 3,
         "/v1/runtime-scorecard": 1,
       },
+    }, {
+      enabled: true,
+      path: "/tmp/ogx-runtime-events.jsonl",
+      event_count: 8,
+      route_hits: 5,
+      doctor_runs: 3,
+      failed_doctor_runs: 1,
+      last_event_at: "2026-03-09T00:01:00.000Z",
     });
 
     expect((payload.readiness_contract as string)).toBe("ogx-runtime-scorecard-v1");
@@ -100,6 +108,8 @@ describe("server api payloads", () => {
     expect(((payload.traffic as Record<string, Array<Record<string, unknown>>>).route_counts)).toEqual(
       expect.arrayContaining([expect.objectContaining({ path: "/v1/doctor", count: 3 })])
     );
+    expect(((payload.persistence as Record<string, unknown>).doctor_runs)).toBe(3);
+    expect(((payload.runtime as Record<string, Record<string, unknown>>).operator_auth.enabled)).toBe(false);
     expect(((payload.links as Record<string, string>).runtime_scorecard)).toBe("/v1/runtime-scorecard");
     expect((payload.recommendations as string[]).length).toBeGreaterThanOrEqual(3);
   });
