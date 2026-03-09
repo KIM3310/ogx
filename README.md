@@ -178,7 +178,7 @@ See [docs/manual-validation-checklist.md](docs/manual-validation-checklist.md).
 - `/v1/runtime-brief` summarizes launch/team readiness and operator review flow.
 - `/v1/schema/doctor-report` exposes the doctor result contract for downstream automation and reviewers.
 
-## Quick Review Path
+## Review Flow
 
 - Open `/health` and `/meta` to confirm runtime mode, command posture, and route discovery.
 - Open `/v1/runtime-brief` and `/v1/review-pack` before wiring automation or Cloud Run handoff.
