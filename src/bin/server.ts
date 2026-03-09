@@ -381,6 +381,7 @@ function renderHomePage(): string {
           <button id="btnBrief">Check Brief</button>
           <button id="btnReview">Check Review Pack</button>
           <button id="btnCopyRoutes">Copy Review Routes</button>
+          <button id="btnCopyDoctorSnapshot">Copy Doctor Snapshot</button>
           <button id="btnSchema">Check Schema</button>
           <button id="btnVersion">Check Version</button>
           <button id="btnDoctor">Run Doctor</button>
@@ -407,6 +408,33 @@ function renderHomePage(): string {
         await navigator.clipboard.writeText(body);
         show({ ok: true, copied: "review_routes", review_routes: reviewRoutes });
       }
+      async function copyDoctorSnapshot() {
+        const [briefResponse, reviewResponse] = await Promise.all([
+          fetch("/v1/runtime-brief"),
+          fetch("/v1/review-pack")
+        ]);
+        const brief = await briefResponse.json();
+        const review = await reviewResponse.json();
+        const proof = review.proof_bundle || {};
+        const approval = review.approval_gate || {};
+        const body = [
+          "ogx doctor snapshot",
+          "Runtime mode: " + (proof.runtime_mode || brief.runtime?.mode || "-"),
+          "Port: " + String(proof.port || brief.runtime?.port || "-"),
+          "Gemini command: " + String(proof.gemini_command || brief.runtime?.geminiCommand || "-"),
+          "Doctor before launch: " + (approval.doctor_required_before_launch ? "yes" : "no"),
+          "Default scopes: " + ((proof.doctor_scope_defaults || []).join(", ") || "-"),
+          "",
+          "Review routes",
+          ...reviewRoutes.map((route) => "- " + route)
+        ].join("\\n");
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+          show({ ok: false, message: "Clipboard is not available.", doctor_snapshot: body });
+          return;
+        }
+        await navigator.clipboard.writeText(body);
+        show({ ok: true, copied: "doctor_snapshot", doctor_snapshot: body });
+      }
       document.getElementById("btnHealth").addEventListener("click", async () => {
         const r = await fetch("/health");
         show(await r.json());
@@ -425,6 +453,9 @@ function renderHomePage(): string {
       });
       document.getElementById("btnCopyRoutes").addEventListener("click", async () => {
         await copyReviewRoutes();
+      });
+      document.getElementById("btnCopyDoctorSnapshot").addEventListener("click", async () => {
+        await copyDoctorSnapshot();
       });
       document.getElementById("btnSchema").addEventListener("click", async () => {
         const r = await fetch("/v1/schema/doctor-report");
