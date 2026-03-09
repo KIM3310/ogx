@@ -6,6 +6,7 @@ import {
   createDoctorReportSchemaPayload,
   createReviewPackPayload,
   createRuntimeBriefPayload,
+  createRuntimeScorecardPayload,
   normalizeScope,
 } from "../src/bin/server.js";
 
@@ -70,6 +71,37 @@ describe("server api payloads", () => {
     expect((payload.review_sequence as string[]).length).toBeGreaterThanOrEqual(3);
     expect((payload.two_minute_review as string[]).length).toBe(4);
     expect(((payload.proof_assets as Array<Record<string, string>>)[0].label)).toBe("Health Envelope");
+  });
+
+  it("creates a runtime scorecard payload with doctor telemetry", () => {
+    const payload = createRuntimeScorecardPayload(8080, {
+      doctorRuns: {
+        byScope: {
+          project: 2,
+          user: 1,
+        },
+        failureCount: 1,
+        lastDoctorAt: "2026-03-09T00:00:00.000Z",
+        lastFailureAt: "2026-03-09T00:01:00.000Z",
+        successCount: 2,
+        total: 3,
+      },
+      routeCounts: {
+        "/health": 2,
+        "/v1/doctor": 3,
+        "/v1/runtime-scorecard": 1,
+      },
+    });
+
+    expect((payload.readiness_contract as string)).toBe("ogx-runtime-scorecard-v1");
+    expect(((payload.runtime as Record<string, unknown>).port)).toBe(8080);
+    expect(((payload.doctor_runs as Record<string, number>).total)).toBe(3);
+    expect(((payload.doctor_runs as Record<string, number>).success_rate_pct)).toBeCloseTo(66.67, 1);
+    expect(((payload.traffic as Record<string, Array<Record<string, unknown>>>).route_counts)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: "/v1/doctor", count: 3 })])
+    );
+    expect(((payload.links as Record<string, string>).runtime_scorecard)).toBe("/v1/runtime-scorecard");
+    expect((payload.recommendations as string[]).length).toBeGreaterThanOrEqual(3);
   });
 
   it("creates a doctor report schema payload", () => {

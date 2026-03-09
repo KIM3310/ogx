@@ -14,6 +14,7 @@ const SERVICE_NAME = "oh-my-gemini-api";
 const OPS_CONTRACT = { schema: "ops-envelope-v1", version: 1 } as const;
 const READINESS_CONTRACT = "ogx-runtime-brief-v1";
 const REVIEW_PACK_CONTRACT = "ogx-review-pack-v1";
+const RUNTIME_SCORECARD_CONTRACT = "ogx-runtime-scorecard-v1";
 const DOCTOR_REPORT_SCHEMA = "ogx-doctor-report-v1";
 const OGX_TWO_MINUTE_REVIEW = [
   "Open /health and /meta to confirm runtime mode, command posture, and route discovery.",
@@ -38,6 +39,11 @@ const OGX_PROOF_ASSETS = [
     why: "Packages approval gate, trust boundary, and reviewer sequence in one payload.",
   },
   {
+    label: "Runtime Scorecard",
+    path: "/v1/runtime-scorecard",
+    why: "Summarizes doctor run freshness, route pressure, and launch readiness at runtime.",
+  },
+  {
     label: "Doctor Schema",
     path: "/v1/schema/doctor-report",
     why: "Pins the doctor report contract for launch and team automation.",
@@ -53,10 +59,63 @@ const API_ROUTES = [
   "/meta",
   "/v1/runtime-brief",
   "/v1/review-pack",
+  "/v1/runtime-scorecard",
   "/v1/schema/doctor-report",
   "/v1/doctor",
   "/v1/version",
 ] as const;
+
+export interface OgxRuntimeTelemetry {
+  doctorRuns: {
+    failureCount: number;
+    lastDoctorAt: string | null;
+    lastFailureAt: string | null;
+    successCount: number;
+    total: number;
+    byScope: {
+      project: number;
+      user: number;
+    };
+  };
+  routeCounts: Record<string, number>;
+}
+
+function createRuntimeTelemetry(): OgxRuntimeTelemetry {
+  return {
+    doctorRuns: {
+      failureCount: 0,
+      lastDoctorAt: null,
+      lastFailureAt: null,
+      successCount: 0,
+      total: 0,
+      byScope: {
+        project: 0,
+        user: 0,
+      },
+    },
+    routeCounts: {},
+  };
+}
+
+function recordRouteHit(telemetry: OgxRuntimeTelemetry, route: string): void {
+  telemetry.routeCounts[route] = (telemetry.routeCounts[route] ?? 0) + 1;
+}
+
+function recordDoctorRun(
+  telemetry: OgxRuntimeTelemetry,
+  scope: "project" | "user",
+  ok: boolean
+): void {
+  telemetry.doctorRuns.total += 1;
+  telemetry.doctorRuns.byScope[scope] += 1;
+  telemetry.doctorRuns.lastDoctorAt = new Date().toISOString();
+  if (ok) {
+    telemetry.doctorRuns.successCount += 1;
+    return;
+  }
+  telemetry.doctorRuns.failureCount += 1;
+  telemetry.doctorRuns.lastFailureAt = telemetry.doctorRuns.lastDoctorAt;
+}
 
 function readPort(): number {
   const parsed = Number.parseInt(process.env.PORT ?? "8080", 10);
@@ -90,6 +149,7 @@ function buildLinks(): JsonObject {
     api: "/api",
     runtime_brief: "/v1/runtime-brief",
     review_pack: "/v1/review-pack",
+    runtime_scorecard: "/v1/runtime-scorecard",
     doctor_schema: "/v1/schema/doctor-report",
     version: "/v1/version",
     doctor: "/v1/doctor",
@@ -205,6 +265,56 @@ export function createRuntimeBriefPayload(port: number): JsonObject {
   };
 }
 
+export function createRuntimeScorecardPayload(
+  port: number,
+  telemetry: OgxRuntimeTelemetry
+): JsonObject {
+  const reviewRoutes = ["/health", "/meta", "/v1/runtime-brief", "/v1/runtime-scorecard", "/v1/review-pack"];
+  const routeCounts = Object.entries(telemetry.routeCounts)
+    .map(([path, count]) => ({ path, count }))
+    .sort((left, right) => right.count - left.count || left.path.localeCompare(right.path));
+
+  return {
+    service: SERVICE_NAME,
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    readiness_contract: RUNTIME_SCORECARD_CONTRACT,
+    headline:
+      "Runtime scorecard for launch posture, doctor freshness, and route pressure across the ogx operator API.",
+    runtime: {
+      mode: readRuntimeMode(),
+      port,
+      node: process.version,
+      route_count: API_ROUTES.length,
+      review_routes: reviewRoutes,
+    },
+    doctor_runs: {
+      ...telemetry.doctorRuns,
+      success_rate_pct:
+        telemetry.doctorRuns.total > 0
+          ? Math.round(
+              (telemetry.doctorRuns.successCount / telemetry.doctorRuns.total) *
+                10_000
+            ) / 100
+          : 0,
+    },
+    traffic: {
+      total_requests: routeCounts.reduce((total, item) => total + item.count, 0),
+      route_counts: routeCounts,
+    },
+    recommendations: [
+      telemetry.doctorRuns.total > 0
+        ? "Doctor telemetry is populated. Re-run doctor after any shell, Gemini CLI, or notification drift."
+        : 'Run POST /v1/doctor with {"scope":"project"} to populate live launch evidence.',
+      telemetry.doctorRuns.failureCount > 0
+        ? "Investigate failed doctor runs before claiming launch readiness."
+        : "No failed doctor runs are recorded in this process yet.",
+      "Keep runtime brief and review pack paired with the latest doctor evidence during handoff.",
+    ],
+    links: buildLinks(),
+  };
+}
+
 export function createReviewPackPayload(port: number): JsonObject {
   return {
     service: SERVICE_NAME,
@@ -217,7 +327,14 @@ export function createReviewPackPayload(port: number): JsonObject {
       runtime_mode: readRuntimeMode(),
       port,
       gemini_command: process.env.OGX_GEMINI_CMD || "gemini",
-      review_routes: ["/health", "/meta", "/v1/runtime-brief", "/v1/review-pack", "/v1/schema/doctor-report"],
+      review_routes: [
+        "/health",
+        "/meta",
+        "/v1/runtime-brief",
+        "/v1/runtime-scorecard",
+        "/v1/review-pack",
+        "/v1/schema/doctor-report",
+      ],
       doctor_scope_defaults: ["project", "user"],
     },
     approval_gate: {
@@ -360,6 +477,7 @@ function renderHomePage(): string {
           <div class="box"><strong>Health</strong><br /><code>/health</code></div>
           <div class="box"><strong>Meta</strong><br /><code>/meta</code></div>
           <div class="box"><strong>Runtime Brief</strong><br /><code>/v1/runtime-brief</code></div>
+          <div class="box"><strong>Runtime Scorecard</strong><br /><code>/v1/runtime-scorecard</code></div>
           <div class="box"><strong>Review Pack</strong><br /><code>/v1/review-pack</code></div>
           <div class="box"><strong>Doctor Schema</strong><br /><code>/v1/schema/doctor-report</code></div>
           <div class="box"><strong>Version</strong><br /><code>/v1/version</code></div>
@@ -379,6 +497,7 @@ function renderHomePage(): string {
           <button id="btnHealth">Check Health</button>
           <button id="btnMeta">Check Meta</button>
           <button id="btnBrief">Check Brief</button>
+          <button id="btnScorecard">Check Scorecard</button>
           <button id="btnReview">Check Review Pack</button>
           <button id="btnCopyRoutes">Copy Review Routes</button>
           <button id="btnCopyDoctorSnapshot">Copy Doctor Snapshot</button>
@@ -395,7 +514,7 @@ function renderHomePage(): string {
     </main>
     <script>
       const output = document.getElementById("output");
-      const reviewRoutes = ["/health", "/meta", "/v1/runtime-brief", "/v1/review-pack", "/v1/schema/doctor-report"];
+      const reviewRoutes = ["/health", "/meta", "/v1/runtime-brief", "/v1/runtime-scorecard", "/v1/review-pack", "/v1/schema/doctor-report"];
       function show(data) {
         output.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
       }
@@ -449,6 +568,10 @@ function renderHomePage(): string {
       });
       document.getElementById("btnReview").addEventListener("click", async () => {
         const r = await fetch("/v1/review-pack");
+        show(await r.json());
+      });
+      document.getElementById("btnScorecard").addEventListener("click", async () => {
+        const r = await fetch("/v1/runtime-scorecard");
         show(await r.json());
       });
       document.getElementById("btnCopyRoutes").addEventListener("click", async () => {
@@ -536,9 +659,11 @@ async function runDoctor(scope: "project" | "user"): Promise<JsonObject> {
 }
 
 export function createApiServer(port = readPort()) {
+  const telemetry = createRuntimeTelemetry();
   return createServer(async (request, response) => {
     const method = request.method ?? "GET";
     const url = request.url ?? "/";
+    recordRouteHit(telemetry, url);
 
     if (method === "GET" && url === "/health") {
       sendJson(response, 200, createHealthPayload(port));
@@ -557,6 +682,11 @@ export function createApiServer(port = readPort()) {
 
     if (method === "GET" && url === "/v1/review-pack") {
       sendJson(response, 200, createReviewPackPayload(port));
+      return;
+    }
+
+    if (method === "GET" && url === "/v1/runtime-scorecard") {
+      sendJson(response, 200, createRuntimeScorecardPayload(port, telemetry));
       return;
     }
 
@@ -590,6 +720,7 @@ export function createApiServer(port = readPort()) {
         const body = await readJsonBody(request);
         const scope = normalizeScope(body.scope);
         const doctor = await runDoctor(scope);
+        recordDoctorRun(telemetry, scope, doctor.ok === true);
         sendJson(response, 200, {
           ok: true,
           status: doctor.ok ? "ok" : "degraded",
