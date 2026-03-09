@@ -513,7 +513,7 @@ function renderHomePage(): string {
         </div>
         <div class="grid">
           <div class="box">
-            <strong>2-Minute Review</strong>
+            <strong>Quick Review</strong>
             <ul>${twoMinuteList}</ul>
           </div>
           <div class="box">
