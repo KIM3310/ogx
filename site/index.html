@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ogx</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#eef3fb; --panel:#fdfefe; --ink:#141820; --muted:#566477; --line:#d5dce8; --accent:#2563eb; --soft:#eaf0ff; }
+    *{box-sizing:border-box} body{margin:0;font-family:"IBM Plex Sans",sans-serif;background:linear-gradient(180deg,#f7faff 0,#ebf0f7 100%);color:var(--ink)}
+    .shell{max-width:1100px;margin:0 auto;padding:32px 20px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 40px rgba(15,23,42,.05)}
+    .hero,.grid{display:grid;gap:16px}.hero{margin-bottom:18px}.eyebrow,.chip{display:inline-flex;padding:8px 12px;border-radius:999px;font-size:.82rem;font-weight:700}.eyebrow{background:#111827;color:#fff}.chip{background:var(--soft);color:var(--accent)}
+    h1,h2{font-family:"Space Grotesk",sans-serif;letter-spacing:-.04em;margin:0}.hero h1{font-size:clamp(2.4rem,4.8vw,4.4rem);line-height:.96}.lede{max-width:860px;margin:0;color:var(--muted);line-height:1.75}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}.list{margin:0;padding-left:18px;color:var(--muted);line-height:1.8}.links a{color:var(--accent);text-decoration:none;font-weight:600}
+    @media (max-width:900px){.two{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel hero">
+      <div>
+        <span class="eyebrow">ogx</span>
+        <span class="chip">CLI</span>
+        <span class="chip">multi-agent</span>
+      </div>
+      <h1>Gemini-based multi-agent orchestration CLI.</h1>
+      <p class="lede">ogx is primarily a command-line product, not a web app. This free static site is the right public surface: installation guidance, architecture, runtime posture, and review flow without pretending the core experience belongs in a browser.</p>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>Primary surfaces</h2>
+        <ul class="list">
+          <li><code>ogx setup</code> for project bootstrap</li>
+          <li><code>ogx doctor</code> for environment and notification checks</li>
+          <li><code>ogx launch</code> for isolated Gemini runtime execution</li>
+          <li><code>ogx team</code> for tmux-based multi-agent coordination</li>
+          <li>Optional Cloud Run API wrapper for health, review pack, and doctor routes</li>
+        </ul>
+      </article>
+      <article class="panel">
+        <h2>Deployment posture</h2>
+        <ul class="list">
+          <li>Public docs: static and free to host</li>
+          <li>CLI distribution: better via package/install flow than browser runtime</li>
+          <li>Optional live service mode: Cloud Run when a hosted API is needed</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="panel links">
+        <h2>Read first</h2>
+        <ul class="list">
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/README.md">README</a></li>
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/docs/commands.md">Command reference</a></li>
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/docs/manual-validation-checklist.md">Manual validation checklist</a></li>
+        </ul>
+      </article>
+      <article class="panel">
+        <h2>Review path</h2>
+        <ul class="list">
+          <li>Install dependencies and build the CLI locally.</li>
+          <li>Run doctor before launch.</li>
+          <li>Use the Cloud Run wrapper only when a hosted reviewer surface is actually needed.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
