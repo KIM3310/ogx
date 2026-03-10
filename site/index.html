@@ -22,6 +22,8 @@
     h1,h2{font-family:"Space Grotesk",sans-serif;letter-spacing:-.04em;margin:0}.hero h1{font-size:clamp(2.4rem,4.8vw,4.4rem);line-height:.96}.lede{max-width:860px;margin:0;color:var(--muted);line-height:1.75}
     .two{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}.list{margin:0;padding-left:18px;color:var(--muted);line-height:1.8}.links a{color:var(--accent);text-decoration:none;font-weight:600}
     @media (max-width:900px){.two{grid-template-columns:1fr}}
+  
+    .quick-actions{margin-top:18px}.quick-actions .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.quick-actions .action-btn{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:999px;font:inherit;font-weight:600;color:var(--ink);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}.quick-actions .action-btn:hover{transform:translateY(-1px);border-color:var(--accent);box-shadow:0 10px 24px rgba(15,23,42,.08)}.quick-actions .hint{margin:10px 0 0;color:var(--muted);font-size:.92rem;line-height:1.6}
   </style>
 </head>
 <body>
@@ -75,6 +77,84 @@
         </ul>
       </article>
     </section>
+
+
+
+    <section class="panel quick-actions">
+      <h2>Reviewer quick actions</h2>
+      <p class="hint">Shortcut keys: C review path · B reviewer brief · ? help</p>
+      <div class="action-row">
+        <button id="copyReviewPathBtn" class="action-btn" type="button">Copy Review Path</button>
+        <button id="copyReviewerBriefBtn" class="action-btn" type="button">Copy Reviewer Brief</button>
+      </div>
+      <p id="quickActionStatus" class="hint">Ready for a fast reviewer handoff. Shortcut keys: C review path · B reviewer brief · ? help</p>
+    </section>
   </main>
+
+
+
+  <script>
+    async function copyQuickActionText(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_error) {
+        // Fallback below.
+      }
+      try {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(helper);
+        return Boolean(ok);
+      } catch (_error) {
+        return false;
+      }
+    }
+
+    const quickActionStatus = document.getElementById("quickActionStatus");
+    const reviewPathPayload = 'ogx review path\n- Read the README first for install and product posture.\n- Open the command reference before claiming runtime behavior.\n- Use the manual validation checklist for hosted reviewer surfaces.';
+    const reviewerBriefPayload = 'ogx reviewer brief\nHeadline: Gemini-based multi-agent orchestration CLI.\nPrimary surfaces: ogx setup, ogx doctor, ogx launch, ogx team.\nDeployment posture: static docs first, Cloud Run only when a hosted API is actually needed.\nPublic surface: browser docs for a CLI-native product.';
+
+    async function runQuickCopy(text, successLabel, failureLabel) {
+      const ok = await copyQuickActionText(text);
+      if (quickActionStatus) {
+        quickActionStatus.textContent = ok ? successLabel : failureLabel;
+      }
+    }
+
+    document.getElementById("copyReviewPathBtn")?.addEventListener("click", () => runQuickCopy(reviewPathPayload, "Review path copied.", "Failed to copy review path."));
+    document.getElementById("copyReviewerBriefBtn")?.addEventListener("click", () => runQuickCopy(reviewerBriefPayload, "Reviewer brief copied.", "Failed to copy reviewer brief."));
+
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const key = String(event.key || "").toLowerCase();
+      if (key === "?") {
+        event.preventDefault();
+        if (quickActionStatus) {
+          quickActionStatus.textContent = "Shortcut keys: C review path · B reviewer brief · ? help";
+        }
+        return;
+      }
+      if (key === "c") {
+        event.preventDefault();
+        void runQuickCopy(reviewPathPayload, "Review path copied.", "Failed to copy review path.");
+      }
+      if (key === "b") {
+        event.preventDefault();
+        void runQuickCopy(reviewerBriefPayload, "Reviewer brief copied.", "Failed to copy reviewer brief.");
+      }
+    });
+  </script>
 </body>
 </html>
