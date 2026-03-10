@@ -82,12 +82,13 @@
 
     <section class="panel quick-actions">
       <h2>Reviewer quick actions</h2>
-      <p class="hint">Shortcut keys: C review path · B reviewer brief · ? help</p>
+      <p class="hint">Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help</p>
       <div class="action-row">
         <button id="copyReviewPathBtn" class="action-btn" type="button">Copy Review Path</button>
         <button id="copyReviewerBriefBtn" class="action-btn" type="button">Copy Reviewer Brief</button>
+        <button id="copyDoctorDeckBtn" class="action-btn" type="button">Copy Doctor Deck</button>
       </div>
-      <p id="quickActionStatus" class="hint">Ready for a fast reviewer handoff. Shortcut keys: C review path · B reviewer brief · ? help</p>
+      <p id="quickActionStatus" class="hint">Ready for a fast reviewer handoff. Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help</p>
     </section>
   </main>
 
@@ -123,6 +124,7 @@
     const quickActionStatus = document.getElementById("quickActionStatus");
     const reviewPathPayload = 'ogx review path\n- Read the README first for install and product posture.\n- Open the command reference before claiming runtime behavior.\n- Use the manual validation checklist for hosted reviewer surfaces.';
     const reviewerBriefPayload = 'ogx reviewer brief\nHeadline: Gemini-based multi-agent orchestration CLI.\nPrimary surfaces: ogx setup, ogx doctor, ogx launch, ogx team.\nDeployment posture: static docs first, Cloud Run only when a hosted API is actually needed.\nPublic surface: browser docs for a CLI-native product.';
+    const doctorDeckPayload = 'ogx doctor deck\n- npm install\n- npm run build\n- npm run doctor\n- npm run exercise:runtime\n- Review /health, /v1/runtime-brief, /v1/review-pack before hosted claims.';
 
     async function runQuickCopy(text, successLabel, failureLabel) {
       const ok = await copyQuickActionText(text);
@@ -133,6 +135,7 @@
 
     document.getElementById("copyReviewPathBtn")?.addEventListener("click", () => runQuickCopy(reviewPathPayload, "Review path copied.", "Failed to copy review path."));
     document.getElementById("copyReviewerBriefBtn")?.addEventListener("click", () => runQuickCopy(reviewerBriefPayload, "Reviewer brief copied.", "Failed to copy reviewer brief."));
+    document.getElementById("copyDoctorDeckBtn")?.addEventListener("click", () => runQuickCopy(doctorDeckPayload, "Doctor deck copied.", "Failed to copy doctor deck."));
 
     window.addEventListener("keydown", (event) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -142,7 +145,7 @@
       if (key === "?") {
         event.preventDefault();
         if (quickActionStatus) {
-          quickActionStatus.textContent = "Shortcut keys: C review path · B reviewer brief · ? help";
+          quickActionStatus.textContent = "Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help";
         }
         return;
       }
@@ -153,6 +156,10 @@
       if (key === "b") {
         event.preventDefault();
         void runQuickCopy(reviewerBriefPayload, "Reviewer brief copied.", "Failed to copy reviewer brief.");
+      }
+      if (key === "d") {
+        event.preventDefault();
+        void runQuickCopy(doctorDeckPayload, "Doctor deck copied.", "Failed to copy doctor deck.");
       }
     });
   </script>
