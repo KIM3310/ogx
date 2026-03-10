@@ -2,9 +2,13 @@
 
 Gemini-based multi-agent orchestration CLI inspired by the operational structure of `oh-my-codex`.
 
+## Portfolio posture
+- Treat this repo as a CLI-first product; the static site is orientation, not runtime proof.
+- README, command reference, `ogx doctor`, and reviewer routes are the evidence layer for operational claims.
+
 ## Key Principles
 
-- Fresh implementation (no code copy).
+- Independent implementation tuned for CLI operator workflows.
 - Node.js 20+ / TypeScript ESM.
 - Safe by default.
 - Dangerous flags are blocked unless explicitly opted in.

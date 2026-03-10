@@ -35,7 +35,7 @@
         <span class="chip">multi-agent</span>
       </div>
       <h1>Gemini-based multi-agent orchestration CLI.</h1>
-      <p class="lede">ogx is primarily a command-line product, not a web app. This free static site is the right public surface: installation guidance, architecture, runtime posture, and review flow without pretending the core experience belongs in a browser.</p>
+      <p class="lede">ogx is a CLI product with an optional hosted wrapper, so the browser surface should stay honest. This page exists to orient reviewers fast: install path, operator posture, and the shortest route to the commands that actually prove the tool.</p>
     </section>
 
     <section class="grid two">
@@ -81,14 +81,14 @@
 
 
     <section class="panel quick-actions">
-      <h2>Reviewer quick actions</h2>
-      <p class="hint">Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help</p>
+      <h2>Operator handoff bar</h2>
+      <p class="hint">Shortcut keys: C review path · B CLI brief · D doctor deck · ? help</p>
       <div class="action-row">
         <button id="copyReviewPathBtn" class="action-btn" type="button">Copy Review Path</button>
         <button id="copyReviewerBriefBtn" class="action-btn" type="button">Copy Reviewer Brief</button>
         <button id="copyDoctorDeckBtn" class="action-btn" type="button">Copy Doctor Deck</button>
       </div>
-      <p id="quickActionStatus" class="hint">Ready for a fast reviewer handoff. Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help</p>
+      <p id="quickActionStatus" class="hint">Use this bar when you need a short operator handoff without replaying the whole docs tree. Shortcut keys: C review path · B CLI brief · D doctor deck · ? help</p>
     </section>
   </main>
 
@@ -145,7 +145,7 @@
       if (key === "?") {
         event.preventDefault();
         if (quickActionStatus) {
-          quickActionStatus.textContent = "Shortcut keys: C review path · B reviewer brief · D doctor deck · ? help";
+          quickActionStatus.textContent = "Shortcut keys: C review path · B CLI brief · D doctor deck · ? help";
         }
         return;
       }
