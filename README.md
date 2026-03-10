@@ -6,6 +6,12 @@ Gemini-based multi-agent orchestration CLI inspired by the operational structure
 - Treat this repo as a CLI-first product; the static site is orientation, not runtime proof.
 - README, command reference, `ogx doctor`, and reviewer routes are the evidence layer for operational claims.
 
+
+## Role signals
+- **AI engineer:** agent orchestration, runtime isolation, and CLI-first workflows are the real proof points here.
+- **Solution architect:** tmux workers, local state boundaries, and optional hosted wrappers stay clearly separated.
+- **Field / sales engineer:** `ogx doctor` and the reviewer routes make onboarding and demos easier to repeat.
+
 ## Key Principles
 
 - Independent implementation tuned for CLI operator workflows.
