@@ -1,0 +1,73 @@
+{
+  "name": "oh-my-gemini",
+  "version": "1.0.0",
+  "description": "Unified Gemini CLI orchestration with task dependency graphs, lease tokens, critic/verifier planning, tmux teams, HUD, and MCP support",
+  "type": "module",
+  "bin": {
+    "ogx": "./bin/ogx.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "verify": "npm run build && npm test && npm run smoke",
+    "presmoke": "npm run build",
+    "smoke": "node scripts/exercise-runtime.mjs",
+    "setup": "node dist/bin/ogx.js setup",
+    "doctor": "node dist/bin/ogx.js doctor",
+    "serve": "node dist/bin/server.js",
+    "exercise:runtime": "node scripts/exercise-runtime.mjs",
+    "dev": "tsx src/bin/ogx.ts",
+    "dev:api": "tsx src/bin/server.ts",
+    "deploy:gcp": "bash scripts/deploy-cloud-run.sh",
+    "install:gcloud": "bash scripts/install-gcloud-local.sh",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "gemini",
+    "cli",
+    "orchestration",
+    "tmux",
+    "multi-agent",
+    "developer-tools",
+    "cloud-run",
+    "runtime",
+    "automation",
+    "mcp",
+    "hud"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KIM3310/ogx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KIM3310/ogx/issues"
+  },
+  "homepage": "https://github.com/KIM3310/ogx#readme",
+  "files": [
+    "bin",
+    "dist",
+    "prompts",
+    "skills",
+    "templates",
+    "docs",
+    "README.md",
+    "Dockerfile"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "nodemailer": "^7.0.13",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/nodemailer": "^7.0.11",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.1"
+  }
+}

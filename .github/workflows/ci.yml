@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  node-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare test artifact directory
+        run: mkdir -p artifacts
+
+      - name: Build
+        run: npm run build
+
+      - name: CLI install smoke
+        run: |
+          node dist/bin/ogx.js --help | tee artifacts/ogx-help.txt
+
+      - name: Test
+        run: npm test
+
+      - name: Smoke
+        run: npm run exercise:runtime
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogx-proof-artifacts
+          path: artifacts/ogx-help.txt

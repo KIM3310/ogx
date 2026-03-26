@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <meta name="description" content="Gemini-based multi-agent orchestration CLI with tmux team management, local state isolation, and operator-focused workflows.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ogx">
+  <meta property="og:description" content="Gemini-based multi-agent orchestration CLI with tmux team management, local state isolation, and operator-focused workflows.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ogx">
+  <meta name="twitter:description" content="Gemini-based multi-agent orchestration CLI with tmux team management, local state isolation, and operator-focused workflows."><title>ogx</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#eef3fb; --panel:#fdfefe; --ink:#141820; --muted:#566477; --line:#d5dce8; --accent:#2563eb; --soft:#eaf0ff; }
+    *{box-sizing:border-box} body{margin:0;font-family:"IBM Plex Sans",sans-serif;background:linear-gradient(180deg,#f7faff 0,#ebf0f7 100%);color:var(--ink)}
+    .shell{max-width:1100px;margin:0 auto;padding:32px 20px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 40px rgba(15,23,42,.05)}
+    .hero,.grid{display:grid;gap:16px}.hero{margin-bottom:18px}.eyebrow,.chip{display:inline-flex;padding:8px 12px;border-radius:999px;font-size:.82rem;font-weight:700}.eyebrow{background:#111827;color:#fff}.chip{background:var(--soft);color:var(--accent)}
+    h1,h2{font-family:"Space Grotesk",sans-serif;letter-spacing:-.04em;margin:0}.hero h1{font-size:clamp(2.4rem,4.8vw,4.4rem);line-height:.96}.lede{max-width:860px;margin:0;color:var(--muted);line-height:1.75}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}.list{margin:0;padding-left:18px;color:var(--muted);line-height:1.8}.links a{color:var(--accent);text-decoration:none;font-weight:600}
+    .lens-panel{margin-top:18px}.lens-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.lens-tab{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:999px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.lens-tab.active{color:var(--ink);border-color:var(--accent);background:var(--soft)}.lens-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.lens-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px}.lens-card strong{display:block;margin-bottom:8px}
+    @media (max-width:900px){.two{grid-template-columns:1fr}}
+    @media (max-width:900px){.lens-grid{grid-template-columns:1fr}}
+  
+    .quick-actions{margin-top:18px}.quick-actions .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.quick-actions .action-btn{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:999px;font:inherit;font-weight:600;color:var(--ink);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}.quick-actions .action-btn:hover{transform:translateY(-1px);border-color:var(--accent);box-shadow:0 10px 24px rgba(15,23,42,.08)}.quick-actions .hint{margin:10px 0 0;color:var(--muted);font-size:.92rem;line-height:1.6}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel hero">
+      <div>
+        <span class="eyebrow">ogx</span>
+        <span class="chip">CLI</span>
+        <span class="chip">multi-agent</span>
+      </div>
+      <h1>Coordinate Gemini agents without losing the operator thread.</h1>
+      <p class="lede">ogx is a CLI-first product for setup, doctoring, launch, and tmux-based teamwork. The browser surface stays intentionally honest: it points reviewers to the strongest walkthrough first — <code>npm install</code>, <code>npm run smoke</code>, then the real CLI commands — and only leans on hosted routes when a wrapper is actually useful.</p>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>Primary surfaces</h2>
+        <ul class="list">
+          <li><code>ogx setup</code> for project bootstrap</li>
+          <li><code>ogx doctor</code> for environment and notification checks</li>
+          <li><code>ogx launch</code> for isolated Gemini runtime execution</li>
+          <li><code>ogx team</code> for tmux-based multi-agent coordination</li>
+          <li>Optional Cloud Run API wrapper for health, status pack, and doctor routes</li>
+        </ul>
+      </article>
+      <article class="panel">
+        <h2>First command path</h2>
+        <ul class="list">
+          <li>Run <code>npm install</code> and <code>npm run smoke</code> for the shortest honest proof loop.</li>
+          <li>Run <code>ogx setup</code> and <code>ogx doctor</code> before launch so the operator path is grounded.</li>
+          <li>Use the hosted wrapper only when a reviewer explicitly needs a web surface.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>When the hosted wrapper actually matters</h2>
+      <div class="lens-grid" style="margin-top: 12px;">
+        <article class="lens-card">
+          <strong>01 · CLI-first proof</strong>
+          <p>Start with setup and doctor so the operator story is grounded before anyone assumes a browser is required.</p>
+        </article>
+        <article class="lens-card">
+          <strong>02 · Review surface only</strong>
+          <p>Use the hosted wrapper when a reviewer needs health, review-pack, or doctor routes without walking the whole terminal flow live.</p>
+        </article>
+        <article class="lens-card">
+          <strong>03 · Runtime handoff</strong>
+          <p>Move back to launch and team only after the environment and trust-boundary story is already easy to repeat.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel lens-panel">
+      <div class="lens-tabs" role="tablist" aria-label="ogx lens">
+        <button id="lensOperatorBtn" class="lens-tab active" type="button">Operator</button>
+        <button id="lensReviewerBtn" class="lens-tab" type="button">Reviewer</button>
+        <button id="lensPlatformBtn" class="lens-tab" type="button">Platform</button>
+      </div>
+      <h2 id="lensHeadline">Operator-first CLI walkthrough</h2>
+      <p id="lensSummary" class="hint">Start with setup and doctor, then move into launch/team only after the environment story is grounded.</p>
+      <div id="lensGrid" class="lens-grid">
+        <article class="lens-card"><strong>01 · Setup</strong><p>Bootstrap the workspace before claiming the multi-agent story is usable.</p></article>
+        <article class="lens-card"><strong>02 · Doctor</strong><p>Use doctor as the trust-building step before launch or hosted wrapper talk.</p></article>
+        <article class="lens-card"><strong>03 · Team</strong><p>Show tmux coordination only after the operator path is already clear.</p></article>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <article class="panel links">
+        <h2>Read first</h2>
+        <ul class="list">
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/docs/manual-validation-checklist.md">Validation checklist</a></li>
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/README.md">README</a></li>
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/docs/quickstart.md">Quickstart</a></li>
+          <li><a href="https://github.com/KIM3310/ogx/blob/main/docs/commands.md">Command reference</a></li>
+        </ul>
+      </article>
+      <article class="panel">
+        <h2>Review path</h2>
+        <ul class="list">
+          <li>Install dependencies and run <code>npm run smoke</code>.</li>
+          <li>Run doctor before launch.</li>
+          <li>Use the Cloud Run wrapper only when a hosted status page is actually needed.</li>
+        </ul>
+      </article>
+    </section>
+
+
+
+    <section class="panel quick-actions">
+      <h2>Operator handoff bar</h2>
+      <p class="hint">Copy the command path first, then reach for the CLI brief or doctor deck only if the reviewer wants more detail.</p>
+      <div class="action-row">
+        <button id="copyReviewPathBtn" class="action-btn" type="button">Copy Review Path</button>
+        <button id="copyReviewerBriefBtn" class="action-btn" type="button">Copy CLI Brief</button>
+        <button id="copyDoctorDeckBtn" class="action-btn" type="button">Copy Doctor Deck</button>
+      </div>
+      <p id="quickActionStatus" class="hint">Default move: copy the command path. Shortcut keys: C review path · B CLI brief · D doctor deck · ? help</p>
+    </section>
+  </main>
+
+
+
+  <script>
+    async function copyQuickActionText(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_error) {
+        // Fallback below.
+      }
+      try {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(helper);
+        return Boolean(ok);
+      } catch (_error) {
+        return false;
+      }
+    }
+
+    const quickActionStatus = document.getElementById("quickActionStatus");
+    const lensHeadline = document.getElementById("lensHeadline");
+    const lensSummary = document.getElementById("lensSummary");
+    const lensGrid = document.getElementById("lensGrid");
+    const lensOperatorBtn = document.getElementById("lensOperatorBtn");
+    const lensReviewerBtn = document.getElementById("lensReviewerBtn");
+    const lensPlatformBtn = document.getElementById("lensPlatformBtn");
+    let currentLens = "operator";
+    const lensConfig = {
+      operator: {
+        headline: "Operator-first CLI walkthrough",
+        summary: "Start with setup and doctor, then move into launch/team only after the environment story is grounded.",
+        cards: [
+          ["01 · Setup", "Bootstrap the workspace before claiming the multi-agent story is usable."],
+          ["02 · Doctor", "Use doctor as the trust-building step before launch or hosted wrapper talk."],
+          ["03 · Team", "Show tmux coordination only after the operator path is already clear."],
+        ],
+      },
+      reviewer: {
+        headline: "Reviewer-first hosted walkthrough",
+        summary: "Use docs, manual checklist, and copyable handoff before anyone assumes there is a permanent web app to click through.",
+        cards: [
+          ["01 · Review path", "Copy the review path so the next person sees the same command sequence."],
+          ["02 · CLI brief", "Use the CLI brief when the reviewer wants the shortest high-level explanation."],
+          ["03 · Doctor deck", "Keep the environment proof close so the tooling story stays credible."],
+        ],
+      },
+      platform: {
+        headline: "Platform lens for optional hosted mode",
+        summary: "Only discuss Cloud Run or wrapper APIs after the CLI-native trust boundary is already explicit.",
+        cards: [
+          ["01 · CLI-native", "Start by proving the product works without a browser dependency."],
+          ["02 · Optional wrapper", "Present the hosted API as an optional review surface, not the core product."],
+          ["03 · Replayable proof", "Use the same review path and checklist no matter where the runtime lives."],
+        ],
+      },
+    };
+
+    function renderLensPanel() {
+      const config = lensConfig[currentLens];
+      if (!config) return;
+      lensHeadline.textContent = config.headline;
+      lensSummary.textContent = config.summary;
+      lensGrid.innerHTML = config.cards.map(([title, body]) => `<article class="lens-card"><strong>${title}</strong><p>${body}</p></article>`).join("");
+      [lensOperatorBtn, lensReviewerBtn, lensPlatformBtn].forEach((btn) => btn?.classList.remove("active"));
+      if (currentLens === "operator") lensOperatorBtn?.classList.add("active");
+      if (currentLens === "reviewer") lensReviewerBtn?.classList.add("active");
+      if (currentLens === "platform") lensPlatformBtn?.classList.add("active");
+    }
+    const reviewPathPayload = 'ogx review path\n- npm install\n- npm run smoke\n- npm test\n- Read the reviewer walkthrough and README before making hosted-wrapper claims.';
+    const reviewerBriefPayload = 'ogx reviewer brief\nHeadline: Gemini multi-agent orchestration CLI with operator-grade runtime and reviewer status pages.\nPrimary surfaces: ogx setup, ogx doctor, ogx launch, ogx team.\nDeployment posture: static docs first, Cloud Run only when a hosted API is actually needed.\nPublic surface: browser docs for a CLI-native product.';
+    const doctorDeckPayload = 'ogx doctor deck\n- npm install\n- npm run smoke\n- npm run doctor\n- Review /health, /v1/runtime-brief, /v1/runtime-scorecard, and /v1/review-pack before hosted claims.';
+
+    async function runQuickCopy(text, successLabel, failureLabel) {
+      const ok = await copyQuickActionText(text);
+      if (quickActionStatus) {
+        quickActionStatus.textContent = ok ? successLabel : failureLabel;
+      }
+    }
+
+    document.getElementById("copyReviewPathBtn")?.addEventListener("click", () => runQuickCopy(reviewPathPayload, "Review path copied.", "Failed to copy review path."));
+    document.getElementById("copyReviewerBriefBtn")?.addEventListener("click", () => runQuickCopy(reviewerBriefPayload, "CLI brief copied.", "Failed to copy CLI brief."));
+    document.getElementById("copyDoctorDeckBtn")?.addEventListener("click", () => runQuickCopy(doctorDeckPayload, "Doctor deck copied.", "Failed to copy doctor deck."));
+    lensOperatorBtn?.addEventListener("click", () => { currentLens = "operator"; renderLensPanel(); });
+    lensReviewerBtn?.addEventListener("click", () => { currentLens = "reviewer"; renderLensPanel(); });
+    lensPlatformBtn?.addEventListener("click", () => { currentLens = "platform"; renderLensPanel(); });
+    renderLensPanel();
+
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const key = String(event.key || "").toLowerCase();
+      if (key === "?") {
+        event.preventDefault();
+        if (quickActionStatus) {
+          quickActionStatus.textContent = "Start with the command path. Then copy the CLI brief or doctor deck as needed.";
+        }
+        return;
+      }
+      if (key === "c") {
+        event.preventDefault();
+        void runQuickCopy(reviewPathPayload, "Review path copied.", "Failed to copy review path.");
+      }
+      if (key === "b") {
+        event.preventDefault();
+        void runQuickCopy(reviewerBriefPayload, "CLI brief copied.", "Failed to copy CLI brief.");
+      }
+      if (key === "d") {
+        event.preventDefault();
+        void runQuickCopy(doctorDeckPayload, "Doctor deck copied.", "Failed to copy doctor deck.");
+      }
+    });
+  </script>
+</body>
+</html>
