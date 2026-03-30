@@ -57,6 +57,7 @@
     "Dockerfile"
   ],
   "license": "MIT",
+  "author": "Doeon Kim",
   "dependencies": {
     "commander": "^12.1.0",
     "nodemailer": "^7.0.13",
