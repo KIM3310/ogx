@@ -7,3 +7,8 @@ dist/
 coverage/
 .runtime/
 .wrangler/
+
+# Environment variables
+.env
+.env.*
+!.env.example
