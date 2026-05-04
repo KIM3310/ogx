@@ -39,10 +39,10 @@ MVP hardened for Gemini orchestration + multi-channel notifications + Vertex pro
 ## Local Environment Progress
 
 - Gemini CLI installed globally and verified:
-  - path: `/Users/do-eon/.local/bin/gemini`
+  - path: `gemini` from PATH
   - version: `0.31.0`
 - tmux installed locally and verified:
-  - path: `/Users/do-eon/.local/bin/tmux`
+  - path: `tmux` from PATH
   - version: `3.5a`
 
 ## Local Commands
