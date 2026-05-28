@@ -132,6 +132,10 @@ Project config in `.omg/config.json`. Notifications via env vars (`OGX_SLACK_WEB
 - Lease tokens prevent duplicate execution
 - macOS/Linux first-class; Windows users should use WSL
 
+## Commercialization Playbook
+
+- [Monetization and GTM playbook](docs/monetization-playbook.md) frames this archived proof as a current buyer conversation, including offer ladder, channels, proof gates, and risk boundaries.
+
 ## Cloud + AI Architecture
 
 This repository includes a neutral cloud and AI engineering blueprint that maps the current proof surface to runtime boundaries, data contracts, model-risk controls, deployment posture, and validation hooks.
